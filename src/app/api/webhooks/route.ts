@@ -5,7 +5,6 @@ import { db } from "src/server/db"; // Adjusted path to your db index
 import { eq } from "drizzle-orm";
 import { users } from "src/server/db/schema"; // Adjusted path to your schema
 import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
 
 const webhookSecret = process.env.CLERK_WEBHOOK_SIGNING_SECRET;
 
