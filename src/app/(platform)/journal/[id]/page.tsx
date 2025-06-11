@@ -1,3 +1,4 @@
+// src/app/(platform)/journal/[id]/page.tsx
 import { auth } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
 import { db } from "~/server/db";

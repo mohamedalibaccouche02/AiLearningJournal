@@ -16,6 +16,8 @@ export type Document = InferSelectModel<typeof schema.documents>;
 export type NewDocument = InferInsertModel<typeof schema.documents>;
 export type Flashcard = InferSelectModel<typeof schema.flashcards>;
 export type NewFlashcard = InferInsertModel<typeof schema.flashcards>;
+export type Quiz = InferSelectModel<typeof schema.quizzes>; // Added Quiz type
+export type NewQuiz = InferInsertModel<typeof schema.quizzes>; // Added NewQuiz type
 
 // Relational types for querying with relations
 export type UserWithRelations = User & {
@@ -26,6 +28,7 @@ export type JournalWithRelations = Journal & {
   user: User;
   document: Document;
   flashcards: Flashcard[];
+  quizzes: Quiz[]; // Added quizzes relation
 };
 
 export type DocumentWithRelations = Document & {
@@ -33,5 +36,9 @@ export type DocumentWithRelations = Document & {
 };
 
 export type FlashcardWithRelations = Flashcard & {
+  journal: Journal;
+};
+
+export type QuizWithRelations = Quiz & { // Added QuizWithRelations type
   journal: Journal;
 };

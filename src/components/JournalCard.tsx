@@ -1,3 +1,4 @@
+//src/components/JournalCard.tsx
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "src/components/ui/card";
 import { Button } from "src/components/ui/button";

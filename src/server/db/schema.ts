@@ -1,6 +1,5 @@
-// src/server/db/schema.ts
 import { sql } from "drizzle-orm";
-import { index, pgTableCreator, text, varchar, timestamp ,integer} from "drizzle-orm/pg-core";
+import { index, pgTableCreator, text, varchar, timestamp, integer, jsonb } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const createTable = pgTableCreator((name) => `ailearningjournal_${name}`);
@@ -47,7 +46,7 @@ export const journalsRelations = relations(journals, ({ one, many }) => ({
     references: [users.userId],
   }),
   document: one(documents),
-  flashcards: many(flashcards),
+  quizzes: many(quizzes),
 }));
 
 // Documents table (PDF uploads for journals)
@@ -74,7 +73,7 @@ export const documentsRelations = relations(documents, ({ one }) => ({
   }),
 }));
 
-// Flashcards table (AI-generated from PDFs)
+// Flashcards table (AI-generated from PDFs) - kept for existing functionality
 export const flashcards = createTable(
   "flashcard",
   {
@@ -84,7 +83,7 @@ export const flashcards = createTable(
       .notNull(),
     question: text("question").notNull(),
     answer: text("answer").notNull(),
-    lastReviewed: timestamp("last_reviewed"), // Tracks the last time this flashcard was reviewed
+    lastReviewed: timestamp("last_reviewed"),
     createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
   },
   (t) => [index("flashcard_journal_idx").on(t.journalId)]
@@ -93,6 +92,27 @@ export const flashcards = createTable(
 export const flashcardsRelations = relations(flashcards, ({ one }) => ({
   journal: one(journals, {
     fields: [flashcards.journalId],
+    references: [journals.id],
+  }),
+}));
+
+// Quizzes table (AI-generated quizzes from PDFs)
+export const quizzes = createTable(
+  "quiz",
+  {
+    id: varchar("id", { length: 256 }).primaryKey(),
+    journalId: varchar("journal_id", { length: 256 })
+      .references(() => journals.id, { onDelete: "cascade" })
+      .notNull(),
+    questions: jsonb("questions").notNull(),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  },
+  (t) => [index("quiz_journal_idx").on(t.journalId)]
+);
+
+export const quizzesRelations = relations(quizzes, ({ one }) => ({
+  journal: one(journals, {
+    fields: [quizzes.journalId],
     references: [journals.id],
   }),
 }));

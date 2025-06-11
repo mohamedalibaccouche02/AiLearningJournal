@@ -1,3 +1,4 @@
+// src/app/(platform)/journal/page.tsx
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "~/server/db";
 import { journals } from "~/server/db/schema";

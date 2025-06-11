@@ -1,3 +1,4 @@
+// src/app/(platform)/journal/new/page.tsx
 "use client";
 import "@uploadthing/react/styles.css";
 import { createJournal } from "src/utils/createjournal";

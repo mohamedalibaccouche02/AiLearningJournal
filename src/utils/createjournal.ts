@@ -1,3 +1,4 @@
+//src/utils/createjournal.ts
 "use server";
 import { redirect } from "next/navigation";
 import { db } from "~/server/db";
