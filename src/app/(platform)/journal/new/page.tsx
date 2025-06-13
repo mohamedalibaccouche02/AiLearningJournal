@@ -35,11 +35,16 @@ export default function NewJournalPage() {
     formData.set("fileName", fileName);
     formData.set("fileSize", fileSize.toString());
     try {
-      await createJournal(formData);
-      toast.success("Journal and quiz created successfully!");
-      router.push(`/journal/${crypto.randomUUID()}`); // Temporary; update with newJournal.id
+      const result = await createJournal(formData); // Expect { success: boolean, id: string }
+      if (result.success && result.id) {
+        toast.success("Journal and quiz created successfully!");
+        router.push(`/journal/${result.id}`);
+      } else {
+        throw new Error("Unknown error during journal creation");
+      }
     } catch (error: any) {
-      toast.error("Failed to create journal: " + (error.message || "Unknown error"));
+      console.error("Journal creation failed:", error); // Log the error for debugging
+      toast.error(`Failed to create journal: ${error.message || "Unknown error"}`);
     } finally {
       setIsSubmitting(false);
     }

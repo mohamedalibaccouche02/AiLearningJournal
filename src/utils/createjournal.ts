@@ -1,5 +1,5 @@
+// src/utils/createjournal.ts
 "use server";
-import { redirect } from "next/navigation";
 import { db } from "~/server/db";
 import { journals, documents, quizzes, users } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -78,7 +78,8 @@ export async function createJournal(formData: FormData) {
     createdAt: new Date(),
   });
 
-  redirect(`/journal/${newJournal.id}`);
+  revalidatePath("/journal"); // Revalidate the journal list page
+  return { success: true, id: newJournal.id }; // Return the journal ID instead of redirecting
 }
 
 export async function deleteJournal(journalId: string) {
