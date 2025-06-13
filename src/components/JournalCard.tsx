@@ -23,9 +23,10 @@ interface JournalCardProps {
   title: string;
   createdAt: Date;
   lastModified: Date;
+  score: string;
 }
 
-export default function JournalCard({ id, title, createdAt, lastModified }: JournalCardProps) {
+export default function JournalCard({ id, title, createdAt, lastModified, score }: JournalCardProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -56,6 +57,9 @@ export default function JournalCard({ id, title, createdAt, lastModified }: Jour
             <p className="text-sm text-gray-600">
               Last Modified: {new Date(lastModified).toLocaleDateString()}
             </p>
+            <p className="text-sm text-gray-600">
+              Quiz Score: {score}
+            </p>
             <Button
               variant="ghost"
               size="icon"
@@ -76,7 +80,7 @@ export default function JournalCard({ id, title, createdAt, lastModified }: Jour
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Journal</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{title}"? This action cannot be undone, and all associated PDFs and flashcards will be removed.
+              Are you sure you want to delete "{title}"? This action cannot be undone, and all associated PDFs and quizzes will be removed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

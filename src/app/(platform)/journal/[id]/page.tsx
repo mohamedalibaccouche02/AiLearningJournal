@@ -2,11 +2,11 @@
 import { auth } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
 import { db } from "~/server/db";
-import { journals, documents, flashcards, users } from "~/server/db/schema";
+import { journals, documents, quizzes, users } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "src/components/ui/card";
 import { Button } from "src/components/ui/button";
-import { FileText, ChevronRight } from "lucide-react";
+import { FileText, ChevronRight, BookOpen } from "lucide-react";
 import Link from "next/link";
 
 type JournalPageProps = {
@@ -52,8 +52,7 @@ export default async function JournalPage({ params }: JournalPageProps) {
     .from(journals)
     .where(and(eq(journals.id, id), eq(journals.userId, userUuid)))
     .leftJoin(documents, eq(documents.journalId, journals.id))
-    .leftJoin(flashcards, eq(flashcards.journalId, journals.id))
-    .limit(6);
+    .leftJoin(quizzes, eq(quizzes.journalId, journals.id));
 
   if (!journalResult.length) {
     notFound();
@@ -63,6 +62,7 @@ export default async function JournalPage({ params }: JournalPageProps) {
   if (!result) {
     notFound();
   }
+
   const journal = {
     id: result.journal.id,
     title: result.journal.title,
@@ -70,9 +70,7 @@ export default async function JournalPage({ params }: JournalPageProps) {
     createdAt: result.journal.createdAt.toISOString(),
     lastModified: result.journal.lastModified.toISOString(),
     pdfUrl: result.document?.url || "",
-    flashcards: journalResult
-      .filter((row) => row.flashcard)
-      .flatMap((row) => (row.flashcard ? [{ question: row.flashcard.question, answer: row.flashcard.answer }] : [])),
+    quiz: result.quiz || null,
   };
 
   return (
@@ -118,20 +116,25 @@ export default async function JournalPage({ params }: JournalPageProps) {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl font-semibold">Flashcards</CardTitle>
+              <CardTitle className="text-xl font-semibold">Quiz</CardTitle>
             </CardHeader>
             <CardContent>
-              {journal.flashcards.length > 0 ? (
+              {journal.quiz ? (
                 <div className="space-y-4">
-                  {journal.flashcards.map((card, index) => (
-                    <Card key={index} className="p-4 hover:bg-indigo-50  hover:shadow-md transition-shadow duration-200">
-                      <p className="font-semibold text-gray-900">Question: {card.question}</p>
-                      <p className="text-gray-600">Answer: {card.answer}</p>
-                    </Card>
-                  ))}
+                  <p className="font-semibold text-gray-900">Quiz Available</p>
+                  <Button asChild variant="outline" className="mt-2">
+                    <Link href={`/journal/${journal.id}/quiz/${journal.quiz.id}`}>
+                      Take Quiz
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="mt-2 ml-2">
+                    <Link href={`/journal/${journal.id}/quiz/${journal.quiz.id}/results`}>
+                      View Results
+                    </Link>
+                  </Button>
                 </div>
               ) : (
-                <p className="text-gray-600">No flashcards available.</p>
+                <p className="text-gray-600">No quiz available.</p>
               )}
             </CardContent>
           </Card>

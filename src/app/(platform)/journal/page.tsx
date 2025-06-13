@@ -1,7 +1,7 @@
 // src/app/(platform)/journal/page.tsx
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "~/server/db";
-import { journals } from "~/server/db/schema";
+import { journals, quizzes } from "~/server/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "src/components/ui/card";
 import { Button } from "src/components/ui/button";
@@ -34,8 +34,19 @@ export default async function JournalPage() {
   const userJournals = await db
     .select()
     .from(journals)
+    .leftJoin(quizzes, eq(journals.id, quizzes.journalId))
     .where(eq(journals.userId, userId))
     .orderBy(desc(journals.lastModified));
+
+  const journalsWithScores = userJournals.map(({ journal, quiz }) => ({
+    id: journal.id,
+    title: journal.title,
+    createdAt: journal.createdAt,
+    lastModified: journal.lastModified,
+    score: quiz && quiz.score !== null && quiz.totalQuestions !== null
+      ? `${quiz.score}/${quiz.totalQuestions}`
+      : "Not taken",
+  }));
 
   const username = user?.firstName || "User";
 
@@ -57,15 +68,16 @@ export default async function JournalPage() {
           </Link>
         </div>
 
-        {userJournals.length > 0 ? (
+        {journalsWithScores.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {userJournals.map((journal) => (
+            {journalsWithScores.map((journal) => (
               <JournalCard
                 key={journal.id}
                 id={journal.id}
                 title={journal.title}
                 createdAt={journal.createdAt}
                 lastModified={journal.lastModified}
+                score={journal.score}
               />
             ))}
           </div>

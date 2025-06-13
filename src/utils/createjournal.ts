@@ -1,23 +1,15 @@
-//src/utils/createjournal.ts
 "use server";
 import { redirect } from "next/navigation";
 import { db } from "~/server/db";
-import { journals, documents, flashcards, users } from "~/server/db/schema";
+import { journals, documents, quizzes, users } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
-import { getGeminiFlashcards } from "src/app/api/gemini/gemini";
+import { generateQuizFromGemini } from "src/app/api/gemini/gemini";
 import { revalidatePath } from "next/cache";
-
-interface Flashcard {
-  question: string;
-  answer: string;
-}
 
 export async function createJournal(formData: FormData) {
   const { userId } = await auth();
-  if (!userId) {
-    throw new Error("User not authenticated");
-  }
+  if (!userId) throw new Error("User not authenticated");
 
   let userResult = await db
     .select()
@@ -36,17 +28,12 @@ export async function createJournal(formData: FormData) {
         createdAt: new Date(),
       })
       .returning();
-
-    if (!newUser) {
-      throw new Error("Failed to create user in database.");
-    }
+    if (!newUser) throw new Error("Failed to create user in database.");
     userResult = [newUser];
   }
 
   const userUuid = userResult[0]?.userId;
-  if (!userUuid) {
-    throw new Error("User ID not found after user creation.");
-  }
+  if (!userUuid) throw new Error("User ID not found after user creation.");
 
   const title = formData.get("title") as string;
   const description = formData.get("description") as string | null;
@@ -58,8 +45,6 @@ export async function createJournal(formData: FormData) {
   if (!title || !fileUrl || !fileKey || !fileName || isNaN(fileSize)) {
     throw new Error("Title and PDF are required");
   }
-
-  const generatedFlashcards = await getGeminiFlashcards(fileUrl);
 
   const [newJournal] = await db
     .insert(journals)
@@ -73,9 +58,7 @@ export async function createJournal(formData: FormData) {
     })
     .returning();
 
-  if (!newJournal) {
-    throw new Error("Failed to create journal");
-  }
+  if (!newJournal) throw new Error("Failed to create journal");
 
   await db.insert(documents).values({
     id: crypto.randomUUID(),
@@ -87,18 +70,13 @@ export async function createJournal(formData: FormData) {
     uploadedAt: new Date(),
   });
 
-  if (generatedFlashcards.length > 0) {
-    await db.insert(flashcards).values(
-      generatedFlashcards.map((card) => ({
-        id: crypto.randomUUID(),
-        journalId: newJournal.id,
-        question: card.question,
-        answer: card.answer,
-        lastReviewed: null,
-        createdAt: new Date(),
-      })),
-    );
-  }
+  const generatedQuiz = await generateQuizFromGemini(formData);
+  await db.insert(quizzes).values({
+    id: crypto.randomUUID(),
+    journalId: newJournal.id,
+    questions: generatedQuiz.questions,
+    createdAt: new Date(),
+  });
 
   redirect(`/journal/${newJournal.id}`);
 }
@@ -131,7 +109,7 @@ export async function deleteJournal(journalId: string) {
     throw new Error("Journal not found or you do not have permission to delete it.");
   }
 
-  await db.delete(flashcards).where(eq(flashcards.journalId, journalId));
+  await db.delete(quizzes).where(eq(quizzes.journalId, journalId));
   await db.delete(documents).where(eq(documents.journalId, journalId));
   await db.delete(journals).where(eq(journals.id, journalId));
 

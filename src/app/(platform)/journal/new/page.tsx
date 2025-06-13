@@ -10,6 +10,7 @@ import { Label } from "src/components/ui/label";
 import { Button } from "src/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "src/components/ui/card";
 import { Loader2, Upload } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function NewJournalPage() {
   const [fileUrl, setFileUrl] = useState<string | null>(null);
@@ -18,6 +19,31 @@ export default function NewJournalPage() {
   const [fileSize, setFileSize] = useState<number | null>(null);
   const [uploadComplete, setUploadComplete] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const router = useRouter();
+
+  const handleGenerateQuiz = async () => {
+    if (!fileUrl || !fileKey || !fileName || !fileSize) {
+      toast.error("Please upload a PDF file first.");
+      return;
+    }
+    setIsSubmitting(true);
+    const formData = new FormData();
+    formData.set("title", (document.getElementById("title") as HTMLInputElement).value);
+    formData.set("description", (document.getElementById("description") as HTMLInputElement).value || "");
+    formData.set("fileUrl", fileUrl);
+    formData.set("fileKey", fileKey);
+    formData.set("fileName", fileName);
+    formData.set("fileSize", fileSize.toString());
+    try {
+      await createJournal(formData);
+      toast.success("Journal and quiz created successfully!");
+      router.push(`/journal/${crypto.randomUUID()}`); // Temporary; update with newJournal.id
+    } catch (error: any) {
+      toast.error("Failed to create journal: " + (error.message || "Unknown error"));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-gray-50 py-12">
@@ -28,55 +54,14 @@ export default function NewJournalPage() {
             <p className="text-gray-600">Upload a PDF and add details to start your learning journal.</p>
           </CardHeader>
           <CardContent>
-            <form
-              action={async (formData: FormData) => {
-                if (!fileUrl || !fileKey || !fileName || !fileSize || !uploadComplete) {
-                  toast.error("Please upload a PDF file before submitting.");
-                  return;
-                }
-                setIsSubmitting(true);
-                formData.set("title", formData.get("title") as string);
-                formData.set("description", (formData.get("description") as string) || "");
-                formData.set("fileUrl", fileUrl);
-                formData.set("fileKey", fileKey);
-                formData.set("fileName", fileName);
-                formData.set("fileSize", fileSize.toString());
-                try {
-                  await createJournal(formData);
-                  toast.success("Journal created successfully!");
-                } catch (error: any) {
-                  if (error.message === "NEXT_REDIRECT") {
-                    return;
-                  }
-                  toast.error("Failed to create journal: " + (error.message || "Unknown error"));
-                } finally {
-                  setIsSubmitting(false);
-                }
-              }}
-              className="space-y-6"
-            >
+            <div className="space-y-6">
               <div>
-                <Label htmlFor="title" className="text-gray-900">
-                  Journal Title
-                </Label>
-                <Input
-                  id="title"
-                  name="title"
-                  placeholder="Enter journal title"
-                  required
-                  className="mt-1"
-                />
+                <Label htmlFor="title" className="text-gray-900">Journal Title</Label>
+                <Input id="title" name="title" placeholder="Enter journal title" required className="mt-1" />
               </div>
               <div>
-                <Label htmlFor="description" className="text-gray-900">
-                  Description (Optional)
-                </Label>
-                <Input
-                  id="description"
-                  name="description"
-                  placeholder="Enter description"
-                  className="mt-1"
-                />
+                <Label htmlFor="description" className="text-gray-900">Description (Optional)</Label>
+                <Input id="description" name="description" placeholder="Enter description" className="mt-1" />
               </div>
               <div>
                 <Label className="text-gray-900">Upload PDF</Label>
@@ -94,9 +79,7 @@ export default function NewJournalPage() {
                             <Upload className="h-4 w-4 mr-2" />
                             Upload PDF
                           </span>
-                        ) : (
-                          "Loading..."
-                        );
+                        ) : "Loading...";
                       },
                       allowedContent({ ready }) {
                         return ready ? "PDF files only (max 16MB)" : "";
@@ -116,38 +99,28 @@ export default function NewJournalPage() {
                       }
                     }}
                     onUploadError={(error: Error) => {
-                      if (uploadComplete && fileUrl) {
-                        toast.warning("Upload succeeded, but callback failed. You can proceed.");
-                      } else {
-                        toast.error(`Upload failed: ${error.message}`);
-                        setUploadComplete(false);
-                      }
+                      toast.error(`Upload failed: ${error.message}`);
+                      setUploadComplete(false);
                     }}
                   />
                 </div>
-                {fileName && (
-                  <p className="mt-2 text-sm text-gray-600">Uploaded: {fileName}</p>
-                )}
+                {fileName && <p className="mt-2 text-sm text-gray-600">Uploaded: {fileName}</p>}
               </div>
-              <input type="hidden" name="fileUrl" value={fileUrl || ""} />
-              <input type="hidden" name="fileKey" value={fileKey || ""} />
-              <input type="hidden" name="fileName" value={fileName || ""} />
-              <input type="hidden" name="fileSize" value={fileSize?.toString() || "0"} />
               <Button
-                type="submit"
+                onClick={handleGenerateQuiz}
                 disabled={!uploadComplete || !fileUrl || isSubmitting}
                 className="w-full bg-indigo-600 hover:bg-indigo-700"
               >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Creating...
+                    Generating Quiz...
                   </>
                 ) : (
-                  "Create Journal"
+                  "Generate Quiz and Create Journal"
                 )}
               </Button>
-            </form>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -104,10 +104,18 @@ export const quizzes = createTable(
     journalId: varchar("journal_id", { length: 256 })
       .references(() => journals.id, { onDelete: "cascade" })
       .notNull(),
-    questions: jsonb("questions").notNull(),
+    questions: jsonb("questions").notNull(), // Static quiz questions { id, text, options, correct }
+    userId: varchar("user_id", { length: 256 })
+      .references(() => users.userId, { onDelete: "cascade" }),
+    score: integer("score"),
+    totalQuestions: integer("total_questions"),
+    responses: jsonb("responses"), // User responses { questionId, selectedAnswer, isCorrect }[]
     createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
   },
-  (t) => [index("quiz_journal_idx").on(t.journalId)]
+  (t) => [
+    index("quiz_journal_idx").on(t.journalId),
+    index("quiz_user_idx").on(t.userId),
+  ]
 );
 
 export const quizzesRelations = relations(quizzes, ({ one }) => ({
