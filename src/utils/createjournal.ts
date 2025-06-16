@@ -1,4 +1,3 @@
-// src/utils/createjournal.ts
 "use server";
 import { db } from "~/server/db";
 import { journals, documents, quizzes, users } from "~/server/db/schema";
@@ -6,6 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
 import { generateQuizFromGemini } from "src/app/api/gemini/gemini";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export async function createJournal(formData: FormData) {
   const { userId } = await auth();
@@ -79,7 +79,7 @@ export async function createJournal(formData: FormData) {
   });
 
   revalidatePath("/journal"); // Revalidate the journal list page
-  return { success: true, id: newJournal.id }; // Return the journal ID instead of redirecting
+  redirect("/journal"); // Force a full page reload
 }
 
 export async function deleteJournal(journalId: string) {
